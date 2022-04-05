@@ -3,6 +3,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text.Json.Serialization;
+using abahaBravo.Model;
 using abahaBravo.Request;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -22,7 +23,7 @@ namespace abahaBravo.Controller
         }
 
         [HttpGet("{sku}")]
-        public JsonResult Get(int sku)
+        public JsonResult Get(string sku)
         {
             Request.Headers.TryGetValue("Authorization", out var token);
             Request.Headers.TryGetValue("Cookie", out var cookie);
@@ -32,26 +33,16 @@ namespace abahaBravo.Controller
                 res.StatusCode = 401;
                 return res;
             }
-            string query = @"SELECT SUM(Quantity) AS Amount FROM
-	                            (
-	                            SELECT ItemId, (OpenQuantity) AS Quantity  FROM vB30OpenInventoryHdr
-	                            WHERE ItemId = @ItemId AND Year = YEAR(Getdate())
-	                            UNION 
-	                            SELECT ItemId, (CASE WHEN DocGroup = 1 THEN Quantity ELSE -Quantity END) AS Quantity
-	                            FROM B30StockLedger 
-	                            WHERE  Isactive = 1 AND ItemId = @ItemId AND YEAR(DocDate) = YEAR(Getdate())
-	                            ) AS a
-	                            GROUP BY ItemId";
-
+            Inventory inventory = new Inventory();
             DataTable table = new DataTable();
             string sqlDataSource = _configuration.GetConnectionString("EmployeeAppCon");
             SqlDataReader myReader;
             using (SqlConnection myCon = new SqlConnection(sqlDataSource))
             {
                 myCon.Open();
-                using (SqlCommand myCommand = new SqlCommand(query, myCon))
+                using (SqlCommand myCommand = new SqlCommand(inventory.query, myCon))
                 {
-                    myCommand.Parameters.AddWithValue("@Itemid", sku);
+                    myCommand.Parameters.AddWithValue("@_ItemCode", sku);
 
                     myReader = myCommand.ExecuteReader();
                     table.Load(myReader);

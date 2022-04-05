@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data.SqlClient;
+using abahaBravo.Model;
 using abahaBravo.Request;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -18,7 +19,7 @@ namespace abahaBravo.Controller
         }
 
         [HttpPost]
-        public JsonResult Create(AccDocRequest.Create request)
+        public JsonResult Create(AccDocRequest.CreateAcc request)
         {
             Request.Headers.TryGetValue("Authorization", out var token);
             Request.Headers.TryGetValue("Cookie", out var cookie);
@@ -30,46 +31,46 @@ namespace abahaBravo.Controller
             }
 
             long time = DateTime.Now.Ticks;
-            Console.WriteLine(time.ToString());
-            string query =
-                @"INSERT INTO AbahaAccdoc (Id,Code,DiscountRate,Address,Contact,Phone)
-                    VALUES (@Code,@DiscountRate,@Address,@Contact,@Phone)";
-            string queryAccDocSale =
-                @"INSERT INTO AbahaAccdocSale (Id,Sku,Quantity,Price,Total,BillId)
-                    VALUES (@Id,@Sku,@Quantity,@Price,@Total,@BillId)";
+            AccDocc accDocc = new AccDocc();
 
             string sqlDataSource = _configuration.GetConnectionString("EmployeeAppCon");
             using (SqlConnection myCon = new SqlConnection(sqlDataSource))
             {
                 myCon.Open();
-                using (SqlCommand myCommand = new SqlCommand(query, myCon))
+                using (SqlCommand myCommand = new SqlCommand(accDocc.Query, myCon))
                 {
-                    myCommand.Parameters.AddWithValue("@Id", time);
-                    myCommand.Parameters.AddWithValue("@Code", request.Code);
-                    myCommand.Parameters.AddWithValue("@DiscountRate", request.DiscountRate);
-                    myCommand.Parameters.AddWithValue("@Address", request.Address);
-                    myCommand.Parameters.AddWithValue("@Contact", request.Contact);
-                    myCommand.Parameters.AddWithValue("@Phone", request.Phone);
+                    myCommand.Parameters.AddWithValue("@_Id", time);
+                    myCommand.Parameters.AddWithValue("@_Code", request.Code);
+                    myCommand.Parameters.AddWithValue("@_DiscountRate", request.DiscountRate);
+                    myCommand.Parameters.AddWithValue("@_Address", request.Address);
+                    myCommand.Parameters.AddWithValue("@_Contact", request.Contact);
+                    myCommand.Parameters.AddWithValue("@_Phone", request.Phone);
 
                     myCommand.ExecuteReader();
                 }
-            }
 
-            using (SqlConnection myCon = new SqlConnection(sqlDataSource))
-            {
-                myCon.Open();
-                using (SqlCommand myCommand = new SqlCommand(queryAccDocSale, myCon))
+                foreach (var accDocSale in request.AccDocSales)
                 {
-                    foreach (var accDocSale in request.AccDocSales)
+                    using (SqlCommand myCommand = new SqlCommand(accDocc.QueryAccDocSale, myCon))
                     {
-                        myCommand.Parameters.AddWithValue("@Sku", accDocSale.Sku);
-                        myCommand.Parameters.AddWithValue("@Quantity", accDocSale.Quantity);
-                        myCommand.Parameters.AddWithValue("@Price", accDocSale.Price);
-                        myCommand.Parameters.AddWithValue("@Total", accDocSale.Total);
-                        myCommand.Parameters.AddWithValue("@BillId", time);
+                        myCommand.Parameters.Clear();
+                        myCommand.Parameters.AddWithValue("@_Sku", accDocSale.Sku);
+                        myCommand.Parameters.AddWithValue("@_Quantity", accDocSale.Quantity);
+                        myCommand.Parameters.AddWithValue("@_Price", accDocSale.Price);
+                        myCommand.Parameters.AddWithValue("@_Total", accDocSale.Price * accDocSale.Quantity);
+                        myCommand.Parameters.AddWithValue("@_BillId", time);
                         myCommand.ExecuteReader();
                     }
                 }
+
+                using (SqlCommand myCommand = new SqlCommand(accDocc.QueryExec, myCon))
+                {
+                    myCommand.Parameters.Clear();
+                    myCommand.Parameters.AddWithValue("@_Id", time);
+                    myCommand.ExecuteReader();
+                }
+
+                myCon.Close();
             }
 
 

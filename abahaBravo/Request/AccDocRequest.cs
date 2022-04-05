@@ -5,7 +5,7 @@ namespace abahaBravo.Request
 {
     public class AccDocRequest
     {
-        public class Create
+        public class CreateAcc
         {
             public string Code { get; set; }
             public string Address { get; set; }
@@ -17,10 +17,9 @@ namespace abahaBravo.Request
 
         public class AccDocSale
         {
-            public int Sku { get; set; }
+            public string Sku { get; set; }
             public int Quantity { get; set; }
             public int Price { get; set; }
-            public int Total { get; set; }
         }
     }
 }

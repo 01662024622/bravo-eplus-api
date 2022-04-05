@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using System.Data.SqlClient;
+using abahaBravo.Model;
 using abahaBravo.Request;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -30,10 +31,7 @@ namespace abahaBravo.Controller
                 return res;
             }
 
-            string select = @"SELECT * FROM B20Customer WHERE Code = @Code";
-            string query =
-                @"INSERT INTO B20Customer (ParentId,IsGroup,BranchCode,Code,Name,Address,BillingAddress,PersonTel, Email,CustomerType)
-                    VALUES ('402281',0,'A01',@Code,@Name,@Address,@BillingAddress,@Phone,@Email,1)";
+            B20Customer customer = new B20Customer();
 
             DataTable table = new DataTable();
             string sqlDataSource = _configuration.GetConnectionString("EmployeeAppCon");
@@ -41,7 +39,7 @@ namespace abahaBravo.Controller
             using (SqlConnection myCon = new SqlConnection(sqlDataSource))
             {
                 myCon.Open();
-                using (SqlCommand myCommand = new SqlCommand(select, myCon))
+                using (SqlCommand myCommand = new SqlCommand(customer.SelectQuery, myCon))
                 {
                     myCommand.Parameters.AddWithValue("@Code", request.Code);
 
@@ -56,7 +54,7 @@ namespace abahaBravo.Controller
                     }
                 }
 
-                using (SqlCommand myCommand = new SqlCommand(query, myCon))
+                using (SqlCommand myCommand = new SqlCommand(customer.CreatQuery, myCon))
                 {
                     myCommand.Parameters.AddWithValue("@Code", request.Code);
                     myCommand.Parameters.AddWithValue("@Name", request.Name);
@@ -65,10 +63,7 @@ namespace abahaBravo.Controller
                     myCommand.Parameters.AddWithValue("@Phone", request.Phone);
                     myCommand.Parameters.AddWithValue("@Email", request.Email);
 
-                    myReader = myCommand.ExecuteReader();
-                    table.Load(myReader);
-
-                    Console.WriteLine(table.Rows[0]["Id"]);
+                    myCommand.ExecuteReader();
                 }
 
                 myReader.Close();

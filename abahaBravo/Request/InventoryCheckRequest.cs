@@ -2,6 +2,6 @@
 {
     public class InventoryCheckRequest
     {
-        public int Sku { get; set; }
+        public string Sku { get; set; }
     }
 }
